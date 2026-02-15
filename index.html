@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Budget Mariage - Version Finale</title>
+    <title>Budget Mariage - Clean Design</title>
     <style>
         :root {
             --bg: #1a1a1a;
@@ -12,166 +12,212 @@
             --highlight: #4caf50;
             --input-bg: #3d3d3d;
             --unpaid: #ff5252;
+            --adil-color: #2196F3;
+            --hanalei-color: #E91E63;
+            --parents-color: #FF9800;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 220px; }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type=number] { -moz-appearance: textfield; text-align: right; }
+        
+        /* --- SUPPRESSION DES FLÈCHES (SPINNERS) --- */
+        /* Pour Chrome, Safari, Edge, Opera */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        /* Pour Firefox */
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        .side-tabs { position: fixed; left: 0; top: 25%; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
+        .tab { width: 40px; height: 50px; border-radius: 0 10px 10px 0; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; box-shadow: 4px 0 10px rgba(0,0,0,0.3); }
+        .tab-a { background: var(--adil-color); }
+        .tab-h { background: var(--hanalei-color); }
+        .tab-p { background: var(--parents-color); }
+
+        #detailsModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; backdrop-filter: blur(5px); align-items: center; justify-content: center; }
+        .modal-content { background: var(--card-bg); width: 85%; max-width: 320px; padding: 25px; border-radius: 20px; border: 1px solid #444; text-align: center; }
+        .modal-active { display: flex !important; }
+
         .container { max-width: 500px; margin: 0 auto; }
-        .card { background: var(--card-bg); border-radius: 15px; margin-bottom: 20px; padding: 15px; border: 1px solid #3d3d3d; position: relative; }
-        .card-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 8px; }
-        .card-body { display: flex; gap: 10px; align-items: center; }
-        .col-left { flex: 0.8; }
-        .col-right { flex: 1.2; display: flex; flex-direction: column; gap: 10px; }
-        .input-group { position: relative; display: flex; flex-direction: column; }
-        .row-payeur { display: flex; align-items: center; gap: 8px; }
-        .row-payeur input[type="number"] { flex-grow: 1; }
+        .card { background: var(--card-bg); border-radius: 15px; margin-bottom: 20px; padding: 15px; border: 1px solid #3d3d3d; }
+        .card-title { font-weight: bold; font-size: 1rem; margin-bottom: 12px; text-align: center; color: #fff; text-transform: uppercase; }
+        
+        .total-wrapper { text-align: center; margin-bottom: 15px; display: flex; justify-content: center; }
+        .input-cout { background: transparent; border: none; border-bottom: 2px solid var(--highlight); font-weight: bold; font-size: 1.6rem; color: var(--highlight); width: 160px; text-align: center; outline: none; }
+
+        .payeurs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .payeur-box { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .payeur-box label { font-size: 0.7rem; color: #aaa; text-transform: capitalize; }
+        .payeur-box input[type="number"] { width: 100%; box-sizing: border-box; padding: 10px 5px; border-radius: 8px; border: none; background: var(--input-bg); color: white; font-size: 1rem; text-align: center; outline: none; }
         .pay-check { width: 22px; height: 22px; cursor: pointer; accent-color: var(--highlight); }
-        label { font-size: 0.65rem; color: #aaa; text-transform: uppercase; margin-bottom: 2px; }
-        input { padding: 10px 8px; border: none; border-radius: 8px; font-size: 1rem; background: var(--input-bg); color: white; }
-        .input-cout { background: #222; border: 1px solid #444; font-weight: bold; width: 100%; box-sizing: border-box; color: var(--highlight); }
+
         .is-paid-field { background: rgba(74, 175, 80, 0.2) !important; border: 1px solid var(--highlight) !important; }
-        .comment-group { margin-top: 15px; border-top: 1px dashed #555; padding-top: 10px; }
-        .comment-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); font-size: 0.85rem; font-style: italic; }
-        .sticky-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #000; padding: 15px 20px; box-shadow: 0 -8px 20px rgba(0,0,0,0.6); z-index: 100; }
+        .comment-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); border: 1px solid #444; border-radius: 6px; color: #bbb; font-size: 0.8rem; font-style: italic; margin-top: 15px; padding: 8px; }
+
+        .sticky-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #000; padding: 15px 20px; z-index: 100; border-top: 1px solid #333; }
         .progress-container { height: 6px; background: #333; border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
-        #progressBar { height: 100%; background: var(--highlight); width: 0%; transition: width 0.5s; }
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .stat-row.main { font-size: 1.1rem; font-weight: bold; color: var(--highlight); }
-        .person-totals { display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid #333; font-size: 0.75rem; color: #888; }
-        .person-totals span b { color: #eee; }
-        .btn-save { width: 100%; padding: 15px; background: var(--highlight); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
-        .btn-save:disabled { background: #444; cursor: not-allowed; }
-        .btn-reset { width: 100%; padding: 8px; background: transparent; color: #666; border: 1px solid #444; border-radius: 8px; font-size: 0.7rem; cursor: pointer; margin-top: 10px; }
+        #progressBar { height: 100%; background: var(--highlight); width: 0%; transition: 0.5s; }
+        .btn-save { width: 100%; padding: 15px; background: var(--highlight); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
     </style>
 </head>
 <body>
 
+    <div class="side-tabs">
+        <div class="tab tab-a" onclick="openModal('Adil')">A</div>
+        <div class="tab tab-h" onclick="openModal('Hanaleï')">H</div>
+        <div class="tab tab-p" onclick="openModal('Parents')">P</div>
+    </div>
+
+    <div id="detailsModal" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2 id="modalHeader"></h2>
+            <div style="display:flex; justify-content:space-between; margin:10px 0;"><span>Payé:</span><b id="modalPaid" style="color:var(--highlight)"></b></div>
+            <div style="display:flex; justify-content:space-between; margin:10px 0;"><span>Reste:</span><b id="modalRest" style="color:var(--unpaid)"></b></div>
+            <hr style="border:0; border-top:1px solid #444">
+            <div style="display:flex; justify-content:space-between; margin:10px 0;"><span>Total:</span><b id="modalTotal"></b></div>
+            <button onclick="closeModal()" style="width:100%; padding:12px; margin-top:10px; border-radius:8px; border:none; background:#444; color:white; font-weight:bold;">FERMER</button>
+        </div>
+    </div>
+
     <div class="container">
-        <h1>Budget Mariage</h1>
+        <h1 style="text-align: center;">Budget Mariage</h1>
         <div id="cardsContainer"></div>
         <button class="btn-save" id="saveButton">ENREGISTRER</button>
-        <button class="btn-reset" id="resetLocalButton">RÉINITIALISER LE CACHE (BUG MAJEUR)</button>
+        
         <div class="sticky-footer">
             <div class="progress-container"><div id="progressBar"></div></div>
-            <div class="stat-row main">
-                <span>Déjà Payé</span>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; color: var(--highlight); margin-bottom: 5px; font-size: 1.2rem;">
+                <span>Total Payé</span>
                 <span><span id="totalPaid">0</span> €</span>
             </div>
-            <div class="stat-row" style="font-size: 0.85rem; color: #bbb;">
-                <span>Budget Total : <span id="totalGlobal">0</span> €</span>
-                <span>Reste : <span id="totalRemaining" style="color:var(--unpaid)">0</span> €</span>
-            </div>
-            <div class="person-totals">
-                <span>Adil: <b id="total_adil">0</b>€</span>
-                <span>Hanaleï: <b id="total_hanalei">0</b>€</span>
-                <span>Parents: <b id="total_parents">0</b>€</span>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #999;">
+                <span>Budget : <span id="totalGlobal">0</span> €</span>
+                <span>Reste : <span id="totalRemaining">0</span> €</span>
             </div>
         </div>
     </div>
 
     <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAJoAI9wBPbCAgF7wiOZKhS4z2rIvpUTFY",
-      authDomain: "budget-mariage-d42dd.firebaseapp.com",
-      databaseURL: "https://budget-mariage-d42dd-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "budget-mariage-d42dd",
-      storageBucket: "budget-mariage-d42dd.firebasestorage.app",
-      messagingSenderId: "462100456581",
-      appId: "1:462100456581:web:db61911fe3d792b703b5ec"
-    };
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJoAI9wBPbCAgF7wiOZKhS4z2rIvpUTFY",
+            authDomain: "budget-mariage-d42dd.firebaseapp.com",
+            databaseURL: "https://budget-mariage-d42dd-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "budget-mariage-d42dd",
+            storageBucket: "budget-mariage-d42dd.firebasestorage.app",
+            messagingSenderId: "462100456581",
+            appId: "1:462100456581:web:db61911fe3d792b703b5ec"
+        };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const budgetRef = ref(db, 'weddingBudget');
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const budgetRef = ref(db, 'weddingBudget');
 
-    // NOMS SANS SLASHES POUR FIREBASE
-    const categories = ["Lieu de réception", "Fiançailles Maroc", "Traiteur", "Boissons", "Location sono", "Déco et Activités", "Saxophoniste", "Brunch", "Photographe", "Alliances", "Pièce-Montée", "Robe", "Coiffure et Maquillage", "Costume"];
+        window.stats = { Adil: { paid: 0, total: 0 }, Hanaleï: { paid: 0, total: 0 }, Parents: { paid: 0, total: 0 } };
 
-    const container = document.getElementById('cardsContainer');
+        const categories = ["Lieu de réception", "Fiançailles Maroc", "Traiteur", "Boissons", "Location sono", "Déco et Activités", "Saxophoniste", "Brunch", "Photographe", "Alliances", "Pièce-Montée", "Robe", "Coiffure et Maquillage", "Costume"];
+        const container = document.getElementById('cardsContainer');
 
-    categories.forEach(cat => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        let payeursHtml = ['adil', 'hanalei', 'parents'].map(p => `
-            <div class="input-group">
-                <label>${p}</label>
-                <div class="row-payeur">
+        categories.forEach(cat => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.setAttribute('data-category', cat);
+            const payeurs = ['adil', 'hanalei', 'parents'].map(p => `
+                <div class="payeur-box">
+                    <label>${p}</label>
                     <input type="checkbox" class="pay-check" data-field="check_${p}">
                     <input type="number" inputmode="decimal" class="payeur-input" data-field="${p}" placeholder="0">
+                </div>`).join('');
+
+            card.innerHTML = `
+                <div class="card-title">${cat}</div>
+                <div class="total-wrapper">
+                    <input type="text" class="input-cout" value="0 €" readonly>
                 </div>
-            </div>`).join('');
-
-        card.innerHTML = `
-            <div class="card-title">${cat}</div>
-            <div class="card-body">
-                <div class="col-left"><div class="input-group"><label>Coût Total</label>
-                <input type="number" class="input-cout" placeholder="0" readonly></div></div>
-                <div class="col-right">${payeursHtml}</div>
-            </div>
-            <div class="comment-group"><input type="text" class="comment-input" data-field="note" placeholder="Note..."></div>`;
-        container.appendChild(card);
-    });
-
-    function updateEverything() {
-        let globalTotal = 0, paidTotal = 0, sA = 0, sH = 0, sP = 0;
-        document.querySelectorAll('.card').forEach(card => {
-            const vA = parseFloat(card.querySelector('[data-field="adil"]').value) || 0;
-            const vH = parseFloat(card.querySelector('[data-field="hanalei"]').value) || 0;
-            const vP = parseFloat(card.querySelector('[data-field="parents"]').value) || 0;
-            const totalLigne = vA + vH + vP;
-            card.querySelector('.input-cout').value = totalLigne > 0 ? totalLigne : "";
-            globalTotal += totalLigne; sA += vA; sH += vH; sP += vP;
-            ['adil', 'hanalei', 'parents'].forEach(p => {
-                const input = card.querySelector(`[data-field="${p}"]`);
-                const check = card.querySelector(`[data-field="check_${p}"]`);
-                if(check.checked) {
-                    input.classList.add('is-paid-field');
-                    paidTotal += parseFloat(input.value) || 0;
-                } else { input.classList.remove('is-paid-field'); }
-            });
+                <div class="payeurs-grid">${payeurs}</div>
+                <input type="text" class="comment-input" data-field="note" placeholder="Note...">`;
+            container.appendChild(card);
         });
-        document.getElementById('totalGlobal').innerText = globalTotal.toLocaleString();
-        document.getElementById('totalPaid').innerText = paidTotal.toLocaleString();
-        document.getElementById('totalRemaining').innerText = (globalTotal - paidTotal).toLocaleString() + " €";
-        document.getElementById('progressBar').style.width = (globalTotal > 0 ? (paidTotal / globalTotal) * 100 : 0) + "%";
-        document.getElementById('total_adil').innerText = sA.toLocaleString();
-        document.getElementById('total_hanalei').innerText = sH.toLocaleString();
-        document.getElementById('total_parents').innerText = sP.toLocaleString();
-    }
 
-    container.addEventListener('input', updateEverything);
-    container.addEventListener('change', (e) => { if(e.target.type === 'checkbox') updateEverything(); });
+        function updateEverything() {
+            let globalTotal = 0, globalPaid = 0, sA = 0, pA = 0, sH = 0, pH = 0, sP = 0, pP = 0;
 
-    onValue(budgetRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
             document.querySelectorAll('.card').forEach(card => {
-                const title = card.querySelector('.card-title').innerText;
-                if (data[title]) {
-                    ['adil', 'hanalei', 'parents', 'note'].forEach(f => {
-                        const i = card.querySelector(`[data-field="${f}"]`);
-                        if(i) i.value = data[title][f] || "";
-                    });
-                    ['adil', 'hanalei', 'parents'].forEach(p => {
-                        const c = card.querySelector(`[data-field="check_${p}"]`);
-                        if(c) c.checked = data[title][`check_${p}`] || false;
-                    });
-                }
-            });
-            updateEverything();
-        }
-    });
+                const vA = parseFloat(card.querySelector('[data-field="adil"]').value) || 0;
+                const vH = parseFloat(card.querySelector('[data-field="hanalei"]').value) || 0;
+                const vP = parseFloat(card.querySelector('[data-field="parents"]').value) || 0;
+                const cA = card.querySelector('[data-field="check_adil"]').checked;
+                const cH = card.querySelector('[data-field="check_hanalei"]').checked;
+                const cP = card.querySelector('[data-field="check_parents"]').checked;
 
-    document.getElementById('saveButton').addEventListener('click', function() {
-        const btn = this;
-        btn.innerText = "ENCOURS..."; btn.disabled = true;
-        try {
+                const rowTotal = vA + vH + vP;
+                card.querySelector('.input-cout').value = rowTotal > 0 ? rowTotal.toLocaleString() + " €" : "0 €";
+                
+                globalTotal += rowTotal;
+                sA += vA; sH += vH; sP += vP;
+                if(cA) pA += vA; if(cH) pH += vH; if(cP) pP += vP;
+
+                card.querySelector('[data-field="adil"]').classList.toggle('is-paid-field', cA);
+                card.querySelector('[data-field="hanalei"]').classList.toggle('is-paid-field', cH);
+                card.querySelector('[data-field="parents"]').classList.toggle('is-paid-field', cP);
+            });
+
+            globalPaid = pA + pH + pP;
+            window.stats.Adil = { paid: pA, total: sA };
+            window.stats.Hanaleï = { paid: pH, total: sH };
+            window.stats.Parents = { paid: pP, total: sP };
+
+            document.getElementById('totalGlobal').innerText = globalTotal.toLocaleString();
+            document.getElementById('totalPaid').innerText = globalPaid.toLocaleString();
+            document.getElementById('totalRemaining').innerText = (globalTotal - globalPaid).toLocaleString() + " €";
+            document.getElementById('progressBar').style.width = (globalTotal > 0 ? (globalPaid / globalTotal) * 100 : 0) + "%";
+        }
+
+        window.openModal = function(name) {
+            const data = window.stats[name];
+            document.getElementById('modalHeader').innerText = name;
+            document.getElementById('modalHeader').style.color = name === 'Adil' ? 'var(--adil-color)' : name === 'Hanaleï' ? 'var(--hanalei-color)' : 'var(--parents-color)';
+            document.getElementById('modalPaid').innerText = data.paid.toLocaleString() + " €";
+            document.getElementById('modalRest').innerText = (data.total - data.paid).toLocaleString() + " €";
+            document.getElementById('modalTotal').innerText = data.total.toLocaleString() + " €";
+            document.getElementById('detailsModal').classList.add('modal-active');
+        };
+
+        window.closeModal = () => document.getElementById('detailsModal').classList.remove('modal-active');
+
+        container.addEventListener('input', updateEverything);
+        container.addEventListener('change', (e) => { if(e.target.type === 'checkbox') updateEverything(); });
+
+        onValue(budgetRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                document.querySelectorAll('.card').forEach(card => {
+                    const catName = card.getAttribute('data-category');
+                    const savedData = data[catName];
+                    if (savedData) {
+                        ['adil', 'hanalei', 'parents', 'note'].forEach(f => {
+                            const input = card.querySelector(`[data-field="${f}"]`);
+                            if(input) input.value = savedData[f] || "";
+                        });
+                        ['adil', 'hanalei', 'parents'].forEach(p => {
+                            const check = card.querySelector(`[data-field="check_${p}"]`);
+                            if(check) check.checked = savedData[`check_${p}`] || false;
+                        });
+                    }
+                });
+                updateEverything();
+            }
+        });
+
+        document.getElementById('saveButton').addEventListener('click', function() {
+            const btn = this; btn.innerText = "SAUVEGARDE..."; btn.disabled = true;
             let dataToSave = {};
             document.querySelectorAll('.card').forEach(card => {
-                const title = card.querySelector('.card-title').innerText;
+                const title = card.getAttribute('data-category');
                 dataToSave[title] = {
                     adil: card.querySelector('[data-field="adil"]').value || 0,
                     hanalei: card.querySelector('[data-field="hanalei"]').value || 0,
@@ -182,16 +228,11 @@
                     check_parents: card.querySelector('[data-field="check_parents"]').checked
                 };
             });
-            set(budgetRef, dataToSave)
-                .then(() => alert("✅ Enregistré dans Firebase !"))
-                .catch((err) => alert("❌ Erreur Firebase : " + err.message))
-                .finally(() => { btn.innerText = "ENREGISTRER LES MODIFICATIONS"; btn.disabled = false; });
-        } catch (e) { alert("Erreur : " + e.message); btn.innerText = "ERREUR"; btn.disabled = false; }
-    });
-
-    document.getElementById('resetLocalButton').addEventListener('click', () => {
-        if(confirm("Réinitialiser l'affichage ?")) location.reload();
-    });
-  </script>
+            set(budgetRef, dataToSave).then(() => { 
+                btn.innerText = "✅ RÉUSSI"; 
+                setTimeout(() => { btn.innerText = "ENREGISTRER"; btn.disabled = false; }, 2000); 
+            }).catch(e => { alert("Erreur: " + e.message); btn.disabled = false; });
+        });
+    </script>
 </body>
 </html>
