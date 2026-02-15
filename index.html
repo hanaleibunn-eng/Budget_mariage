@@ -13,7 +13,7 @@
             --input-bg: #3d3d3d;
             --unpaid: #ff5252;
         }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 160px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 220px; }
         
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; text-align: right; }
@@ -35,7 +35,7 @@
 
         label { font-size: 0.65rem; color: #aaa; text-transform: uppercase; margin-bottom: 2px; }
         input { padding: 10px 8px; border: none; border-radius: 8px; font-size: 1rem; background: var(--input-bg); color: white; }
-        .input-cout { background: #444; border: 1px solid #555; font-weight: bold; width: 100%; box-sizing: border-box; }
+        .input-cout { background: #222; border: 1px solid #444; font-weight: bold; width: 100%; box-sizing: border-box; color: var(--highlight); }
 
         .is-paid-field { background: rgba(74, 175, 80, 0.2) !important; border: 1px solid var(--highlight) !important; }
 
@@ -48,7 +48,14 @@
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
         .stat-row.main { font-size: 1.1rem; font-weight: bold; color: var(--highlight); }
         
-        .btn-save { width: 100%; padding: 15px; background: var(--highlight); color: white; border: none; border-radius: 12px; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
+        .person-totals { display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid #333; font-size: 0.75rem; color: #888; }
+        .person-totals span b { color: #eee; }
+
+        .btn-save { width: 100%; padding: 15px; background: var(--highlight); color: white; border: none; border-radius: 12px; font-weight: bold; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+        .btn-save:disabled { background: #444; cursor: not-allowed; }
+
+        .btn-reset { width: 100%; padding: 8px; background: transparent; color: #666; border: 1px solid #444; border-radius: 8px; font-size: 0.7rem; cursor: pointer; margin-top: 10px; }
+        .btn-reset:active { background: #333; }
     </style>
 </head>
 <body>
@@ -56,7 +63,9 @@
     <div class="container">
         <h1>Budget Mariage</h1>
         <div id="cardsContainer"></div>
+        
         <button class="btn-save" id="saveButton">ENREGISTRER LES MODIFICATIONS</button>
+        <button class="btn-reset" id="resetLocalButton">RÉINITIALISER LE CACHE (BUG MAJEUR)</button>
 
         <div class="sticky-footer">
             <div class="progress-container"><div id="progressBar"></div></div>
@@ -68,145 +77,190 @@
                 <span>Budget Total : <span id="totalGlobal">0</span> €</span>
                 <span>Reste : <span id="totalRemaining" style="color:var(--unpaid)">0</span> €</span>
             </div>
+            
+            <div class="person-totals">
+                <span>Adil: <b id="total_adil">0</b>€</span>
+                <span>Hanaleï: <b id="total_hanalei">0</b>€</span>
+                <span>Parents: <b id="total_parents">0</b>€</span>
+            </div>
         </div>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAJoAI9wBPbCAgF7wiOZKhS4z2rIvpUTFY",
-            authDomain: "budget-mariage-d42dd.firebaseapp.com",
-            databaseURL: "https://budget-mariage-d42dd-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "budget-mariage-d42dd",
-            storageBucket: "budget-mariage-d42dd.appspot.com",
-            messagingSenderId: "367332205562",
-            appId: "1:367332205562:web:689620436d467770f3f380"
+    const firebaseConfig = {
+      apiKey: "AIzaSyAJoAI9wBPbCAgF7wiOZKhS4z2rIvpUTFY",
+      authDomain: "budget-mariage-d42dd.firebaseapp.com",
+      databaseURL: "https://budget-mariage-d42dd-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "budget-mariage-d42dd",
+      storageBucket: "budget-mariage-d42dd.firebasestorage.app",
+      messagingSenderId: "462100456581",
+      appId: "1:462100456581:web:db61911fe3d792b703b5ec"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const budgetRef = ref(db, 'weddingBudget');
+
+    const categories = ["Lieu de réception", "Fiançailles Maroc", "Traiteur", "Cocktail / Alcool", "Location sono", "Déco / Activités", "Saxophoniste", "Brunch", "Photographe", "Alliances", "Pièce-Montée", "Robe", "Coiffure / maquillage", "Costume"];
+
+    const container = document.getElementById('cardsContainer');
+
+    categories.forEach(cat => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        let payeursHtml = ['adil', 'hanalei', 'parents'].map(p => `
+            <div class="input-group">
+                <label>${p}</label>
+                <div class="row-payeur">
+                    <input type="checkbox" class="pay-check" data-cat="${cat}" data-field="check_${p}">
+                    <input type="number" inputmode="decimal" class="payeur-input" data-cat="${cat}" data-field="${p}" value="0">
+                </div>
+            </div>`).join('');
+
+        card.innerHTML = `
+            <div class="card-title">${cat}</div>
+            <div class="card-body">
+                <div class="col-left"><div class="input-group"><label>Coût Total</label>
+                <input type="number" class="input-cout" data-cat="${cat}" data-field="cout" value="0" readonly></div></div>
+                <div class="col-right">${payeursHtml}</div>
+            </div>
+            <div class="comment-group"><input type="text" class="comment-input" data-cat="${cat}" data-field="note" placeholder="Note..."></div>`;
+        container.appendChild(card);
+    });
+
+    function updateEverything() {
+        let globalTotal = 0, paidTotal = 0, sA = 0, sH = 0, sP = 0;
+
+        categories.forEach(cat => {
+            const vA = parseFloat(document.querySelector(`input[data-cat="${cat}"][data-field="adil"]`).value) || 0;
+            const vH = parseFloat(document.querySelector(`input[data-cat="${cat}"][data-field="hanalei"]`).value) || 0;
+            const vP = parseFloat(document.querySelector(`input[data-cat="${cat}"][data-field="parents"]`).value) || 0;
+            
+            const totalLigne = vA + vH + vP;
+            document.querySelector(`input[data-cat="${cat}"][data-field="cout"]`).value = totalLigne;
+
+            globalTotal += totalLigne; sA += vA; sH += vH; sP += vP;
+
+            ['adil', 'hanalei', 'parents'].forEach(p => {
+                const input = document.querySelector(`input[data-cat="${cat}"][data-field="${p}"]`);
+                const check = document.querySelector(`input[data-cat="${cat}"][data-field="check_${p}"]`);
+                if(check.checked) {
+                    input.classList.add('is-paid-field');
+                    paidTotal += parseFloat(input.value) || 0;
+                } else {
+                    input.classList.remove('is-paid-field');
+                }
+            });
+        });
+
+        document.getElementById('totalGlobal').innerText = globalTotal.toLocaleString();
+        document.getElementById('totalPaid').innerText = paidTotal.toLocaleString();
+        document.getElementById('totalRemaining').innerText = (globalTotal - paidTotal).toLocaleString() + " €";
+        document.getElementById('progressBar').style.width = (globalTotal > 0 ? (paidTotal / globalTotal) * 100 : 0) + "%";
+        document.getElementById('total_adil').innerText = sA.toLocaleString();
+        document.getElementById('total_hanalei').innerText = sH.toLocaleString();
+        document.getElementById('total_parents').innerText = sP.toLocaleString();
+        
+        saveToLocalStorage();
+    }
+
+    function saveToLocalStorage() {
+        const tempData = {};
+        categories.forEach(cat => {
+            tempData[cat] = {
+                adil: document.querySelector(`input[data-cat="${cat}"][data-field="adil"]`).value,
+                hanalei: document.querySelector(`input[data-cat="${cat}"][data-field="hanalei"]`).value,
+                parents: document.querySelector(`input[data-cat="${cat}"][data-field="parents"]`).value,
+                note: document.querySelector(`input[data-cat="${cat}"][data-field="note"]`).value,
+                check_adil: document.querySelector(`input[data-cat="${cat}"][data-field="check_adil"]`).checked,
+                check_hanalei: document.querySelector(`input[data-cat="${cat}"][data-field="check_hanalei"]`).checked,
+                check_parents: document.querySelector(`input[data-cat="${cat}"][data-field="check_parents"]`).checked
+            };
+        });
+        localStorage.setItem('backupWeddingBudget', JSON.stringify(tempData));
+    }
+
+    container.addEventListener('input', updateEverything);
+    container.addEventListener('change', (e) => { if(e.target.type === 'checkbox') updateEverything(); });
+
+    onValue(budgetRef, (snapshot) => {
+        const data = snapshot.val() || JSON.parse(localStorage.getItem('backupWeddingBudget'));
+        if (data) {
+            categories.forEach(cat => {
+                if (data[cat]) {
+                    ['adil', 'hanalei', 'parents', 'note'].forEach(f => {
+                        const i = document.querySelector(`input[data-cat="${cat}"][data-field="${f}"]`);
+                        if(i) i.value = data[cat][f] || (f === 'note' ? '' : 0);
+                    });
+                    ['adil', 'hanalei', 'parents'].forEach(p => {
+                        const c = document.querySelector(`input[data-cat="${cat}"][data-field="check_${p}"]`);
+                        if(c) c.checked = data[cat][`check_${p}`] || false;
+                    });
+                }
+            });
+            updateEverything();
+        }
+    });
+
+    // SAUVEGARDE AMÉLIORÉE
+    document.getElementById('saveButton').addEventListener('click', function() {
+        const btn = this;
+        const texteOriginal = "ENREGISTRER LES MODIFICATIONS";
+        
+        btn.innerText = "ENCOURS...";
+        btn.disabled = true;
+        btn.style.opacity = "0.7";
+
+        const resetBouton = () => {
+            btn.innerText = texteOriginal;
+            btn.disabled = false;
+            btn.style.opacity = "1";
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const budgetRef = ref(db, 'weddingBudget');
-
-        const categories = ["Lieu de réception", "Fiançailles Maroc", "Traiteur", "Cocktail / Alcool", "Voiture : Christophe", "Location sono", "Déco / Activités", "Saxophoniste", "Brunch", "Photographe", "Alliances", "Pièce-Montée", "Robe", "Coiffure / maquillage", "Costume"];
-
-        const container = document.getElementById('cardsContainer');
-
-        // Génération du HTML
-        categories.forEach(cat => {
-            const card = document.createElement('div');
-            card.className = 'card';
-    
-            // On prépare le contenu des payeurs séparément pour éviter les erreurs d'imbrication
-            let payeursHtml = ['adil', 'hanalei', 'parents'].map(p => {
-                return `
-                    <div class="input-group">
-                        <label>${p}</label>
-                        <div class="row-payeur">
-                            <input type="checkbox" class="pay-check check-trigger" data-cat="${cat}" data-field="check_${p}">
-                            <input type="number" inputmode="decimal" class="val-trigger" data-cat="${cat}" data-field="${p}" value="0">
-                        </div>
-                    </div>`;
-            }).join('');
-
-            card.innerHTML = `
-                <div class="card-title">${cat}</div>
-                <div class="card-body">
-                    <div class="col-left">
-                        <div class="input-group">
-                            <label>Coût Total</label>
-                            <input type="number" inputmode="decimal" class="input-cout val-trigger" data-cat="${cat}" data-field="cout" value="0">
-                        </div>
-                    </div>
-                    <div class="col-right">
-                        ${payeursHtml}
-                    </div>
-                </div>
-                <div class="comment-group">
-                    <input type="text" class="comment-input" data-cat="${cat}" data-field="note" placeholder="Note...">
-                </div>
-            `;
-            container.appendChild(card);
-        });
-
-        // Fonction de calcul globale
-        function updateEverything() {
-            let globalTotal = 0;
-            let paidTotal = 0;
-
-            categories.forEach(cat => {
-                const coutVal = parseFloat(document.querySelector(`input[data-cat="${cat}"][data-field="cout"]`).value) || 0;
-                globalTotal += coutVal;
-
-                ['adil', 'hanalei', 'parents'].forEach(p => {
-                    const row = document.querySelector(`input[data-cat="${cat}"][data-field="${p}"]`);
-                    const check = document.querySelector(`input[data-cat="${cat}"][data-field="check_${p}"]`);
-                    
-                    if(check.checked) {
-                        row.classList.add('is-paid-field');
-                        paidTotal += parseFloat(row.value) || 0;
-                    } else {
-                        row.classList.remove('is-paid-field');
-                    }
-                });
-            });
-
-            const remaining = globalTotal - paidTotal;
-            const percent = globalTotal > 0 ? (paidTotal / globalTotal) * 100 : 0;
-
-            document.getElementById('totalGlobal').innerText = globalTotal.toLocaleString();
-            document.getElementById('totalPaid').innerText = paidTotal.toLocaleString();
-            document.getElementById('totalRemaining').innerText = remaining.toLocaleString() + " €";
-            document.getElementById('progressBar').style.width = percent + "%";
-        }
-
-        // Ecouteurs d'événements
-        container.addEventListener('input', updateEverything);
-        container.addEventListener('change', (e) => {
-            if(e.target.classList.contains('pay-check')) updateEverything();
-        });
-
-        // Chargement initial
-        onValue(budgetRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                categories.forEach(cat => {
-                    if (data[cat]) {
-                        ['cout', 'adil', 'hanalei', 'parents', 'note'].forEach(f => {
-                            const i = document.querySelector(`input[data-cat="${cat}"][data-field="${f}"]`);
-                            if(i) i.value = data[cat][f] || (f === 'note' ? '' : 0);
-                        });
-                        ['adil', 'hanalei', 'parents'].forEach(p => {
-                            const c = document.querySelector(`input[data-cat="${cat}"][data-field="check_${p}"]`);
-                            if(c) c.checked = data[cat][`check_${p}`] || false;
-                        });
-                    }
-                });
-                updateEverything();
-            }
-        });
-
-        // Gestion de la sauvegarde
-        document.getElementById('saveButton').addEventListener('click', () => {
+        try {
             let dataToSave = {};
             categories.forEach(cat => {
                 dataToSave[cat] = {
-                    cout: document.querySelector(`input[data-cat="${cat}"][data-field="cout"]`).value || 0,
-                    adil: document.querySelector(`input[data-cat="${cat}"][data-field="adil"]`).value || 0,
-                    hanalei: document.querySelector(`input[data-cat="${cat}"][data-field="hanalei"]`).value || 0,
-                    parents: document.querySelector(`input[data-cat="${cat}"][data-field="parents"]`).value || 0,
-                    note: document.querySelector(`input[data-cat="${cat}"][data-field="note"]`).value || "",
+                    cout: document.querySelector(`input[data-cat="${cat}"][data-field="cout"]`).value,
+                    adil: document.querySelector(`input[data-cat="${cat}"][data-field="adil"]`).value,
+                    hanalei: document.querySelector(`input[data-cat="${cat}"][data-field="hanalei"]`).value,
+                    parents: document.querySelector(`input[data-cat="${cat}"][data-field="parents"]`).value,
+                    note: document.querySelector(`input[data-cat="${cat}"][data-field="note"]`).value,
                     check_adil: document.querySelector(`input[data-cat="${cat}"][data-field="check_adil"]`).checked,
                     check_hanalei: document.querySelector(`input[data-cat="${cat}"][data-field="check_hanalei"]`).checked,
                     check_parents: document.querySelector(`input[data-cat="${cat}"][data-field="check_parents"]`).checked
                 };
             });
-            
+
             set(budgetRef, dataToSave)
-                .then(() => alert("✅ Données sauvegardées avec succès !"))
-                .catch((error) => alert("❌ Erreur : " + error.message));
-        });
-    </script>
+                .then(() => {
+                    setTimeout(() => { alert("✅ Données sauvegardées !"); }, 100);
+                })
+                .catch((error) => {
+                    alert("❌ Erreur Cloud : " + error.message);
+                })
+                .finally(() => {
+                    // Délai de sécurité pour laisser l'UI respirer
+                    setTimeout(resetBouton, 800);
+                });
+
+        } catch (err) {
+            console.error("Erreur critique :", err);
+            resetBouton();
+            alert("Erreur de script locale.");
+        }
+    });
+
+    document.getElementById('resetLocalButton').addEventListener('click', () => {
+        if(confirm("Attention : cela va vider la mémoire locale de votre navigateur et recharger les données depuis le Cloud. Continuer ?")) {
+            localStorage.removeItem('backupWeddingBudget');
+            location.reload();
+        }
+    });
+
+  </script>
 </body>
 </html>
