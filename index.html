@@ -3,29 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Budget Mariage - Clean Design</title>
+    <title>Budget Mariage</title>
     <style>
         :root {
             --bg: #1a1a1a;
             --card-bg: #2d2d2d;
             --text: #e0e0e0;
-            --highlight: #4caf50;
+            --highlight: #84BF87;
             --input-bg: #3d3d3d;
             --unpaid: #ff5252;
-            --adil-color: #2196F3;
-            --hanalei-color: #E91E63;
-            --parents-color: #FF9800;
+            --adil-color: #13528F;
+            --hanalei-color: #750D56;
+            --parents-color: #A86F05;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 220px; }
         
-        /* --- SUPPRESSION DES FLÈCHES (SPINNERS) --- */
-        /* Pour Chrome, Safari, Edge, Opera */
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button {
             -webkit-appearance: none;
             margin: 0;
         }
-        /* Pour Firefox */
         input[type=number] {
             -moz-appearance: textfield;
         }
@@ -60,6 +57,17 @@
         .progress-container { height: 6px; background: #333; border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
         #progressBar { height: 100%; background: var(--highlight); width: 0%; transition: 0.5s; }
         .btn-save { width: 100%; padding: 15px; background: var(--highlight); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+
+        /* Style pour les badges du bas */
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: white !important; /* Force le texte en blanc pour le contraste */
+            font-weight: bold;
+        }
+        .badge-adil { background-color: var(--adil-color); }
+        .badge-hanalei { background-color: var(--hanalei-color); }
+        .badge-parents { background-color: var(--parents-color); }
     </style>
 </head>
 <body>
@@ -87,16 +95,23 @@
         <button class="btn-save" id="saveButton">ENREGISTRER</button>
         
         <div class="sticky-footer">
-            <div class="progress-container"><div id="progressBar"></div></div>
-            <div style="display: flex; justify-content: space-between; font-weight: bold; color: var(--highlight); margin-bottom: 5px; font-size: 1.2rem;">
-                <span>Total Payé</span>
-                <span><span id="totalPaid">0</span> €</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #999;">
-                <span>Budget : <span id="totalGlobal">0</span> €</span>
-                <span>Reste : <span id="totalRemaining">0</span> €</span>
-            </div>
-        </div>
+          <div class="progress-container"><div id="progressBar"></div></div>
+    
+          <div style="display: flex; justify-content: space-between; font-weight: bold; color: var(--highlight); margin-bottom: 5px; font-size: 1.2rem;">
+              <span>Total Payé</span>
+              <span><span id="totalPaid">0</span> €</span>
+          </div>
+
+          <div style="display: flex; justify-content: flex-start; font-size: 0.85rem; color: #999; margin-bottom: 15px;">
+              <span>Budget Global : <span id="totalGlobal">0</span> €</span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-top: 1px solid #222; padding-top: 12px;">
+              <span class="badge badge-adil">Adil: <span id="displayTotalAdil">0</span>€</span>
+              <span class="badge badge-hanalei">Hanaleï: <span id="displayTotalHanalei">0</span>€</span>
+              <span class="badge badge-parents">Parents: <span id="displayTotalParents">0</span>€</span>
+          </div>
+      </div>
     </div>
 
     <script type="module">
@@ -173,8 +188,11 @@
 
             document.getElementById('totalGlobal').innerText = globalTotal.toLocaleString();
             document.getElementById('totalPaid').innerText = globalPaid.toLocaleString();
-            document.getElementById('totalRemaining').innerText = (globalTotal - globalPaid).toLocaleString() + " €";
             document.getElementById('progressBar').style.width = (globalTotal > 0 ? (globalPaid / globalTotal) * 100 : 0) + "%";
+			
+            document.getElementById('displayTotalAdil').innerText = sA.toLocaleString();
+            document.getElementById('displayTotalHanalei').innerText = sH.toLocaleString();
+            document.getElementById('displayTotalParents').innerText = sP.toLocaleString();
         }
 
         window.openModal = function(name) {
