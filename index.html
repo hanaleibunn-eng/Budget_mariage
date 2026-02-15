@@ -14,48 +14,34 @@
             --unpaid: #ff5252;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 220px; }
-        
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; text-align: right; }
-
         .container { max-width: 500px; margin: 0 auto; }
         .card { background: var(--card-bg); border-radius: 15px; margin-bottom: 20px; padding: 15px; border: 1px solid #3d3d3d; position: relative; }
-        
         .card-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 8px; }
-
         .card-body { display: flex; gap: 10px; align-items: center; }
         .col-left { flex: 0.8; }
         .col-right { flex: 1.2; display: flex; flex-direction: column; gap: 10px; }
-
         .input-group { position: relative; display: flex; flex-direction: column; }
         .row-payeur { display: flex; align-items: center; gap: 8px; }
         .row-payeur input[type="number"] { flex-grow: 1; }
-
         .pay-check { width: 22px; height: 22px; cursor: pointer; accent-color: var(--highlight); }
-
         label { font-size: 0.65rem; color: #aaa; text-transform: uppercase; margin-bottom: 2px; }
         input { padding: 10px 8px; border: none; border-radius: 8px; font-size: 1rem; background: var(--input-bg); color: white; }
         .input-cout { background: #222; border: 1px solid #444; font-weight: bold; width: 100%; box-sizing: border-box; color: var(--highlight); }
-
         .is-paid-field { background: rgba(74, 175, 80, 0.2) !important; border: 1px solid var(--highlight) !important; }
-
         .comment-group { margin-top: 15px; border-top: 1px dashed #555; padding-top: 10px; }
         .comment-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); font-size: 0.85rem; font-style: italic; }
-
         .sticky-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #000; padding: 15px 20px; box-shadow: 0 -8px 20px rgba(0,0,0,0.6); z-index: 100; }
         .progress-container { height: 6px; background: #333; border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
         #progressBar { height: 100%; background: var(--highlight); width: 0%; transition: width 0.5s; }
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
         .stat-row.main { font-size: 1.1rem; font-weight: bold; color: var(--highlight); }
-        
         .person-totals { display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid #333; font-size: 0.75rem; color: #888; }
         .person-totals span b { color: #eee; }
-
-        .btn-save { width: 100%; padding: 15px; background: var(--highlight); color: white; border: none; border-radius: 12px; font-weight: bold; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+        .btn-save { width: 100%; padding: 15px; background: var(--highlight); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
         .btn-save:disabled { background: #444; cursor: not-allowed; }
-
         .btn-reset { width: 100%; padding: 8px; background: transparent; color: #666; border: 1px solid #444; border-radius: 8px; font-size: 0.7rem; cursor: pointer; margin-top: 10px; }
-        .btn-reset:active { background: #333; }
     </style>
 </head>
 <body>
@@ -63,10 +49,8 @@
     <div class="container">
         <h1>Budget Mariage</h1>
         <div id="cardsContainer"></div>
-        
-        <button class="btn-save" id="saveButton">ENREGISTRER LES MODIFICATIONS</button>
+        <button class="btn-save" id="saveButton">ENREGISTRER</button>
         <button class="btn-reset" id="resetLocalButton">RÉINITIALISER LE CACHE (BUG MAJEUR)</button>
-
         <div class="sticky-footer">
             <div class="progress-container"><div id="progressBar"></div></div>
             <div class="stat-row main">
@@ -77,7 +61,6 @@
                 <span>Budget Total : <span id="totalGlobal">0</span> €</span>
                 <span>Reste : <span id="totalRemaining" style="color:var(--unpaid)">0</span> €</span>
             </div>
-            
             <div class="person-totals">
                 <span>Adil: <b id="total_adil">0</b>€</span>
                 <span>Hanaleï: <b id="total_hanalei">0</b>€</span>
@@ -104,11 +87,11 @@
     const db = getDatabase(app);
     const budgetRef = ref(db, 'weddingBudget');
 
-    const categories = ["Lieu de réception", "Fiançailles Maroc", "Traiteur", "Boissons", "Location sono", "Déco et Activités", "Saxophoniste", "Brunch", "Photographe", "Alliances", "Pièce-Montée", "Robe", "Coiffure et maquillage", "Costume"];
+    // NOMS SANS SLASHES POUR FIREBASE
+    const categories = ["Lieu de réception", "Fiançailles Maroc", "Traiteur", "Boissons", "Location sono", "Déco et Activités", "Saxophoniste", "Brunch", "Photographe", "Alliances", "Pièce-Montée", "Robe", "Coiffure et Maquillage", "Costume"];
 
     const container = document.getElementById('cardsContainer');
 
-    // 1. GÉNÉRATION DES CARTES
     categories.forEach(cat => {
         const card = document.createElement('div');
         card.className = 'card';
@@ -117,7 +100,7 @@
                 <label>${p}</label>
                 <div class="row-payeur">
                     <input type="checkbox" class="pay-check" data-field="check_${p}">
-                    <input type="number" inputmode="decimal" class="payeur-input" data-field="${p}" value="0">
+                    <input type="number" inputmode="decimal" class="payeur-input" data-field="${p}" placeholder="0">
                 </div>
             </div>`).join('');
 
@@ -125,39 +108,31 @@
             <div class="card-title">${cat}</div>
             <div class="card-body">
                 <div class="col-left"><div class="input-group"><label>Coût Total</label>
-                <input type="number" class="input-cout" value="0" readonly></div></div>
+                <input type="number" class="input-cout" placeholder="0" readonly></div></div>
                 <div class="col-right">${payeursHtml}</div>
             </div>
             <div class="comment-group"><input type="text" class="comment-input" data-field="note" placeholder="Note..."></div>`;
         container.appendChild(card);
     });
 
-    // 2. CALCULS EN TEMPS RÉEL
     function updateEverything() {
         let globalTotal = 0, paidTotal = 0, sA = 0, sH = 0, sP = 0;
-
         document.querySelectorAll('.card').forEach(card => {
             const vA = parseFloat(card.querySelector('[data-field="adil"]').value) || 0;
             const vH = parseFloat(card.querySelector('[data-field="hanalei"]').value) || 0;
             const vP = parseFloat(card.querySelector('[data-field="parents"]').value) || 0;
-            
             const totalLigne = vA + vH + vP;
-            card.querySelector('.input-cout').value = totalLigne;
-
+            card.querySelector('.input-cout').value = totalLigne > 0 ? totalLigne : "";
             globalTotal += totalLigne; sA += vA; sH += vH; sP += vP;
-
             ['adil', 'hanalei', 'parents'].forEach(p => {
                 const input = card.querySelector(`[data-field="${p}"]`);
                 const check = card.querySelector(`[data-field="check_${p}"]`);
                 if(check.checked) {
                     input.classList.add('is-paid-field');
                     paidTotal += parseFloat(input.value) || 0;
-                } else {
-                    input.classList.remove('is-paid-field');
-                }
+                } else { input.classList.remove('is-paid-field'); }
             });
         });
-
         document.getElementById('totalGlobal').innerText = globalTotal.toLocaleString();
         document.getElementById('totalPaid').innerText = paidTotal.toLocaleString();
         document.getElementById('totalRemaining').innerText = (globalTotal - paidTotal).toLocaleString() + " €";
@@ -170,7 +145,6 @@
     container.addEventListener('input', updateEverything);
     container.addEventListener('change', (e) => { if(e.target.type === 'checkbox') updateEverything(); });
 
-    // 3. CHARGEMENT DEPUIS FIREBASE
     onValue(budgetRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
@@ -179,7 +153,7 @@
                 if (data[title]) {
                     ['adil', 'hanalei', 'parents', 'note'].forEach(f => {
                         const i = card.querySelector(`[data-field="${f}"]`);
-                        if(i) i.value = data[title][f] || (f === 'note' ? '' : 0);
+                        if(i) i.value = data[title][f] || "";
                     });
                     ['adil', 'hanalei', 'parents'].forEach(p => {
                         const c = card.querySelector(`[data-field="check_${p}"]`);
@@ -191,12 +165,9 @@
         }
     });
 
-    // 4. SAUVEGARDE CORRIGÉE
     document.getElementById('saveButton').addEventListener('click', function() {
         const btn = this;
-        btn.innerText = "ENCOURS...";
-        btn.disabled = true;
-
+        btn.innerText = "ENCOURS..."; btn.disabled = true;
         try {
             let dataToSave = {};
             document.querySelectorAll('.card').forEach(card => {
@@ -211,25 +182,16 @@
                     check_parents: card.querySelector('[data-field="check_parents"]').checked
                 };
             });
-
             set(budgetRef, dataToSave)
                 .then(() => alert("✅ Enregistré dans Firebase !"))
                 .catch((err) => alert("❌ Erreur Firebase : " + err.message))
-                .finally(() => {
-                    btn.innerText = "ENREGISTRER LES MODIFICATIONS";
-                    btn.disabled = false;
-                });
-        } catch (e) {
-            alert("Erreur locale : " + e.message);
-            btn.innerText = "ERREUR";
-            btn.disabled = false;
-        }
+                .finally(() => { btn.innerText = "ENREGISTRER LES MODIFICATIONS"; btn.disabled = false; });
+        } catch (e) { alert("Erreur : " + e.message); btn.innerText = "ERREUR"; btn.disabled = false; }
     });
 
     document.getElementById('resetLocalButton').addEventListener('click', () => {
         if(confirm("Réinitialiser l'affichage ?")) location.reload();
     });
-
   </script>
 </body>
 </html>
