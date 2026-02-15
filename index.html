@@ -108,6 +108,7 @@
 
     const container = document.getElementById('cardsContainer');
 
+    // 1. GÉNÉRATION DES CARTES
     categories.forEach(cat => {
         const card = document.createElement('div');
         card.className = 'card';
@@ -115,8 +116,8 @@
             <div class="input-group">
                 <label>${p}</label>
                 <div class="row-payeur">
-                    <input type="checkbox" class="pay-check" data-cat="${cat}" data-field="check_${p}">
-                    <input type="number" inputmode="decimal" class="payeur-input" data-cat="${cat}" data-field="${p}" value="0">
+                    <input type="checkbox" class="pay-check" data-field="check_${p}">
+                    <input type="number" inputmode="decimal" class="payeur-input" data-field="${p}" value="0">
                 </div>
             </div>`).join('');
 
@@ -124,29 +125,30 @@
             <div class="card-title">${cat}</div>
             <div class="card-body">
                 <div class="col-left"><div class="input-group"><label>Coût Total</label>
-                <input type="number" class="input-cout" data-cat="${cat}" data-field="cout" value="0" readonly></div></div>
+                <input type="number" class="input-cout" value="0" readonly></div></div>
                 <div class="col-right">${payeursHtml}</div>
             </div>
-            <div class="comment-group"><input type="text" class="comment-input" data-cat="${cat}" data-field="note" placeholder="Note..."></div>`;
+            <div class="comment-group"><input type="text" class="comment-input" data-field="note" placeholder="Note..."></div>`;
         container.appendChild(card);
     });
 
+    // 2. CALCULS EN TEMPS RÉEL
     function updateEverything() {
         let globalTotal = 0, paidTotal = 0, sA = 0, sH = 0, sP = 0;
 
-        categories.forEach(cat => {
-            const vA = parseFloat(document.querySelector(`input[data-cat="${cat}"][data-field="adil"]`).value) || 0;
-            const vH = parseFloat(document.querySelector(`input[data-cat="${cat}"][data-field="hanalei"]`).value) || 0;
-            const vP = parseFloat(document.querySelector(`input[data-cat="${cat}"][data-field="parents"]`).value) || 0;
+        document.querySelectorAll('.card').forEach(card => {
+            const vA = parseFloat(card.querySelector('[data-field="adil"]').value) || 0;
+            const vH = parseFloat(card.querySelector('[data-field="hanalei"]').value) || 0;
+            const vP = parseFloat(card.querySelector('[data-field="parents"]').value) || 0;
             
             const totalLigne = vA + vH + vP;
-            document.querySelector(`input[data-cat="${cat}"][data-field="cout"]`).value = totalLigne;
+            card.querySelector('.input-cout').value = totalLigne;
 
             globalTotal += totalLigne; sA += vA; sH += vH; sP += vP;
 
             ['adil', 'hanalei', 'parents'].forEach(p => {
-                const input = document.querySelector(`input[data-cat="${cat}"][data-field="${p}"]`);
-                const check = document.querySelector(`input[data-cat="${cat}"][data-field="check_${p}"]`);
+                const input = card.querySelector(`[data-field="${p}"]`);
+                const check = card.querySelector(`[data-field="check_${p}"]`);
                 if(check.checked) {
                     input.classList.add('is-paid-field');
                     paidTotal += parseFloat(input.value) || 0;
@@ -163,41 +165,25 @@
         document.getElementById('total_adil').innerText = sA.toLocaleString();
         document.getElementById('total_hanalei').innerText = sH.toLocaleString();
         document.getElementById('total_parents').innerText = sP.toLocaleString();
-        
-        saveToLocalStorage();
-    }
-
-    function saveToLocalStorage() {
-        const tempData = {};
-        categories.forEach(cat => {
-            tempData[cat] = {
-                adil: document.querySelector(`input[data-cat="${cat}"][data-field="adil"]`).value,
-                hanalei: document.querySelector(`input[data-cat="${cat}"][data-field="hanalei"]`).value,
-                parents: document.querySelector(`input[data-cat="${cat}"][data-field="parents"]`).value,
-                note: document.querySelector(`input[data-cat="${cat}"][data-field="note"]`).value,
-                check_adil: document.querySelector(`input[data-cat="${cat}"][data-field="check_adil"]`).checked,
-                check_hanalei: document.querySelector(`input[data-cat="${cat}"][data-field="check_hanalei"]`).checked,
-                check_parents: document.querySelector(`input[data-cat="${cat}"][data-field="check_parents"]`).checked
-            };
-        });
-        localStorage.setItem('backupWeddingBudget', JSON.stringify(tempData));
     }
 
     container.addEventListener('input', updateEverything);
     container.addEventListener('change', (e) => { if(e.target.type === 'checkbox') updateEverything(); });
 
+    // 3. CHARGEMENT DEPUIS FIREBASE
     onValue(budgetRef, (snapshot) => {
-        const data = snapshot.val() || JSON.parse(localStorage.getItem('backupWeddingBudget'));
+        const data = snapshot.val();
         if (data) {
-            categories.forEach(cat => {
-                if (data[cat]) {
+            document.querySelectorAll('.card').forEach(card => {
+                const title = card.querySelector('.card-title').innerText;
+                if (data[title]) {
                     ['adil', 'hanalei', 'parents', 'note'].forEach(f => {
-                        const i = document.querySelector(`input[data-cat="${cat}"][data-field="${f}"]`);
-                        if(i) i.value = data[cat][f] || (f === 'note' ? '' : 0);
+                        const i = card.querySelector(`[data-field="${f}"]`);
+                        if(i) i.value = data[title][f] || (f === 'note' ? '' : 0);
                     });
                     ['adil', 'hanalei', 'parents'].forEach(p => {
-                        const c = document.querySelector(`input[data-cat="${cat}"][data-field="check_${p}"]`);
-                        if(c) c.checked = data[cat][`check_${p}`] || false;
+                        const c = card.querySelector(`[data-field="check_${p}"]`);
+                        if(c) c.checked = data[title][`check_${p}`] || false;
                     });
                 }
             });
@@ -205,60 +191,43 @@
         }
     });
 
-    // SAUVEGARDE AMÉLIORÉE
+    // 4. SAUVEGARDE CORRIGÉE
     document.getElementById('saveButton').addEventListener('click', function() {
         const btn = this;
-        const texteOriginal = "ENREGISTRER LES MODIFICATIONS";
-        
         btn.innerText = "ENCOURS...";
         btn.disabled = true;
-        btn.style.opacity = "0.7";
-
-        const resetBouton = () => {
-            btn.innerText = texteOriginal;
-            btn.disabled = false;
-            btn.style.opacity = "1";
-        };
 
         try {
             let dataToSave = {};
-            categories.forEach(cat => {
-                dataToSave[cat] = {
-                    cout: document.querySelector(`input[data-cat="${cat}"][data-field="cout"]`).value,
-                    adil: document.querySelector(`input[data-cat="${cat}"][data-field="adil"]`).value,
-                    hanalei: document.querySelector(`input[data-cat="${cat}"][data-field="hanalei"]`).value,
-                    parents: document.querySelector(`input[data-cat="${cat}"][data-field="parents"]`).value,
-                    note: document.querySelector(`input[data-cat="${cat}"][data-field="note"]`).value,
-                    check_adil: document.querySelector(`input[data-cat="${cat}"][data-field="check_adil"]`).checked,
-                    check_hanalei: document.querySelector(`input[data-cat="${cat}"][data-field="check_hanalei"]`).checked,
-                    check_parents: document.querySelector(`input[data-cat="${cat}"][data-field="check_parents"]`).checked
+            document.querySelectorAll('.card').forEach(card => {
+                const title = card.querySelector('.card-title').innerText;
+                dataToSave[title] = {
+                    adil: card.querySelector('[data-field="adil"]').value || 0,
+                    hanalei: card.querySelector('[data-field="hanalei"]').value || 0,
+                    parents: card.querySelector('[data-field="parents"]').value || 0,
+                    note: card.querySelector('[data-field="note"]').value || "",
+                    check_adil: card.querySelector('[data-field="check_adil"]').checked,
+                    check_hanalei: card.querySelector('[data-field="check_hanalei"]').checked,
+                    check_parents: card.querySelector('[data-field="check_parents"]').checked
                 };
             });
 
             set(budgetRef, dataToSave)
-                .then(() => {
-                    setTimeout(() => { alert("✅ Données sauvegardées !"); }, 100);
-                })
-                .catch((error) => {
-                    alert("❌ Erreur Cloud : " + error.message);
-                })
+                .then(() => alert("✅ Enregistré dans Firebase !"))
+                .catch((err) => alert("❌ Erreur Firebase : " + err.message))
                 .finally(() => {
-                    // Délai de sécurité pour laisser l'UI respirer
-                    setTimeout(resetBouton, 800);
+                    btn.innerText = "ENREGISTRER LES MODIFICATIONS";
+                    btn.disabled = false;
                 });
-
-        } catch (err) {
-            console.error("Erreur critique :", err);
-            resetBouton();
-            alert("Erreur de script locale.");
+        } catch (e) {
+            alert("Erreur locale : " + e.message);
+            btn.innerText = "ERREUR";
+            btn.disabled = false;
         }
     });
 
     document.getElementById('resetLocalButton').addEventListener('click', () => {
-        if(confirm("Attention : cela va vider la mémoire locale de votre navigateur et recharger les données depuis le Cloud. Continuer ?")) {
-            localStorage.removeItem('backupWeddingBudget');
-            location.reload();
-        }
+        if(confirm("Réinitialiser l'affichage ?")) location.reload();
     });
 
   </script>
